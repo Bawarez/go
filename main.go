@@ -79,11 +79,11 @@ func getMinAndMax(slice []int64) (int64, int64, error) {
 
 	max := slice[0]
 	min := slice[0]
-	for _, element := range slice {
-		if element > max {
-			max = element
-		} else if element < min  {
-			min = element
+	for i := 1; i < len(slice); i++ {
+		if slice[i] > max {
+			max = slice[i]
+		} else if slice[i] < min  {
+			min = slice[i]
 		}
 	}
 	return min, max, nil
@@ -98,5 +98,9 @@ func sum(slice []int64) int64 {
 }
 
 func avg(slice []int64) int64 {
-	return sum(slice) / int64(len(slice))
+	length := int64(len(slice))
+	if length == 0 {
+		return 0
+	}
+	return sum(slice) / length
 }
