@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,38 +26,44 @@ func main() {
 func traceAll(urls []string, requestsNumber int, timeout int, ) {
 	responseTime := make([]int64, 0)
 	failedRequests := 0
+	mutex := sync.Mutex{}
+	wg := sync.WaitGroup{}
 
 	for _, url := range urls {
 		for i:= 0; i < requestsNumber; i++ {
-			channel := make(chan int64, 1)
+			wg.Add(1)
 			go func() {
-				ping, err := trace(url)
-				if err == nil {
-					channel <- ping
+				channel := make(chan int64)
+				go trace(url, channel)
+				select {
+				case ping := <- channel:
+					mutex.Lock()
+					responseTime = append(responseTime, ping)
+					mutex.Unlock()
+				case <- time.After(time.Duration(int(time.Millisecond) * timeout)):
+					mutex.Lock()
+					failedRequests++
+					mutex.Unlock()
 				}
+				defer wg.Done()
 			}()
-			select {
-			case ping := <- channel:
-				responseTime = append(responseTime, ping)
-			case <- time.After(time.Duration(int(time.Millisecond) * timeout)):
-				failedRequests++
-			}
 		}
 	}
 
+	wg.Wait()
 	printResults(responseTime, failedRequests)
 }
 
-func trace(url string) (int64, error) {
+func trace(url string, channel chan int64)   {
 	start := time.Now()
 	_, err := http.Get(url)
 	if err != nil {
-		return 0, err
+		return
 	}
 	duration := time.Now().Sub(start)
 
 	//convert to milliseconds
-	return duration.Nanoseconds() / 1000000, nil
+	channel <- duration.Nanoseconds() / 1000000
 }
 
 func printResults(responseTime []int64, failedRequests int) {
