@@ -15,7 +15,7 @@ func main() {
 	var requestsNumber int
 	var timeout int
 
-	flag.StringVar(&urls, "u", "", "user urls")
+	flag.StringVar(&urls, "u", "https://www.yandex.ru/ https://www.google.com https://www.tut.by", "urls")
 	flag.IntVar(&requestsNumber, "rn", 1, "requests number")
 	flag.IntVar(&timeout, "t", 500, "timeout")
 	flag.Parse()
@@ -67,13 +67,15 @@ func trace(url string, channel chan int64)   {
 }
 
 func printResults(responseTime []int64, failedRequests int) {
-	fmt.Println("Total response time:", sum(responseTime))
-	fmt.Println("Average response time:", avg(responseTime))
+	const measure = "ms"
+
+	fmt.Println("Total response time:", sum(responseTime), measure)
+	fmt.Println("Average response time:", avg(responseTime), measure)
 
 	min, max, err := getMinAndMax(responseTime)
 	if err == nil {
-		fmt.Println("max: ", max)
-		fmt.Println("min: ", min)
+		fmt.Println("max: ", max, measure)
+		fmt.Println("min: ", min, measure)
 	}
 
 	fmt.Println("Failed requests number: ", failedRequests)
